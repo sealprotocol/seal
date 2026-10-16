@@ -41,6 +41,10 @@ Someone inscribes the text of a block height that already exists. The first conf
 
 The inscription stays text. A wallet or an explorer that follows the rule keeps the earliest inscription and draws the picture from the block named by the text. The same arrangement is used by Bitmap: the file is text, and the picture is computed.
 
+A seal is a collectible. The first inscription has one holder.
+
+The same height can name a Bitmap district. `{height}.bitmap` is the ground of that block. `{height}.seal` is its crest. An application that reads both may show the seal on that district when one wallet holds the two first inscriptions. Building stays with Bitmap. Neither protocol requires the pair.
+
 ## Confirmed
 
 Eleven seals were confirmed in block 971633. Each body is `text/plain;charset=utf-8` and matches the rule exactly. The same ids are in [seals.json](seals.json).

@@ -53,6 +53,10 @@
       <p>The inscription stays text. An explorer shows the file as it was inscribed. A wallet that follows the rule keeps the earliest inscription and draws the picture from the block. The same arrangement is used by Bitmap: the file is text, and the picture is computed.</p>
       <p>The rule an indexer follows is the <a href="https://github.com/sealprotocol/seal/blob/main/specification.md">specification</a>. The drawing in the page is the same rule. The specification and the reference drawing are published so anyone can implement them. Two implementations that follow the rule keep the same first inscription and draw the same picture.</p>
 
+      <h2>Use</h2>
+      <p>A seal is a collectible on Bitcoin. The first inscription of an exact text has one holder. A wallet that follows the rule shows the picture in place of the text.</p>
+      <p>The same height can name a Bitmap district. <code>{height}.bitmap</code> is the ground of that block. <code>{height}.seal</code> is its crest. An application that reads both may show the seal on that district when one wallet holds the two first inscriptions. Building stays with Bitmap. Neither protocol requires the pair.</p>
+
       <h2>This site</h2>
       <p>The front page reads recent blocks from the public block feed. A block that has not been mined has no hash, so it has no picture. Its card shows the fees waiting in the mempool. When the block is found, it crosses the line and the picture appears.</p>
       <p>The inscribed list is the first inscription of each text. Any height that already exists can be drawn from its block, whether or not a seal of that text exists yet. The picture is a reading of the block. The seal is only the first inscription of its text.</p>
