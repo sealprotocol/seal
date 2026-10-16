@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="0.seal.svg" alt="0.seal, the seal of block 0" width="280">
+</p>
+
 # SEAL
 
 SEAL is one inscription per Bitcoin block height. The inscription is text. The picture is computed from that block.
@@ -34,3 +38,7 @@ The exact measures and colors are in [specification.md](specification.md). The s
 ## Order
 
 The specification is fixed first. Then `0.seal` is inscribed. Indexers that follow the rule keep the earliest inscription of each exact text.
+
+## License
+
+You may download this repository, read the specification, and implement it. These files and the seal picture remain the property of .seal. See [LICENSE](LICENSE).
