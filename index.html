@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SEAL</title>
+  <link rel="stylesheet" href="/css/app.css?v=10">
+</head>
+<body>
+  <header class="top">
+    <div>
+      <p class="mark">SEAL</p>
+      <h1>One text per height.<br>The picture belongs to the block.</h1>
+    </div>
+    <p class="live" id="live">connecting to blocks…</p>
+  </header>
+
+  <main>
+    <section aria-labelledby="made-title">
+      <div class="section-head">
+        <h2 id="made-title">Inscribed</h2>
+        <p>Only confirmed inscriptions in this list appear here. The id links to the explorer. The picture is computed from the block named by the text.</p>
+      </div>
+      <div class="gallery" id="made"></div>
+    </section>
+
+    <section aria-labelledby="look-title">
+      <div class="section-head">
+        <h2 id="look-title">Picture of a block</h2>
+        <p>Any height that already exists. The picture is computed from that block.</p>
+      </div>
+      <form id="look-form" class="look-row">
+        <label class="sr" for="height">Height</label>
+        <input id="height" name="height" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="height, including 0">
+        <button type="submit">Show</button>
+      </form>
+      <p class="result" id="look-result" role="status"></p>
+      <div id="stage"></div>
+    </section>
+  </main>
+
+  <script type="module" src="/js/app.js?v=12"></script>
+</body>
+</html>
