@@ -3,24 +3,57 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SEAL</title>
-  <link rel="stylesheet" href="/css/app.css?v=10">
+  <title>.seal</title>
+  <link rel="stylesheet" href="/css/app.css?v=16">
 </head>
 <body>
   <header class="top">
     <div>
-      <p class="mark">SEAL</p>
-      <h1>One text per height.<br>The picture belongs to the block.</h1>
+      <h1>
+        <a class="logo" href="/">
+          <pre aria-label=".seal">░░░░█▀▀░█▀▀░█▀█░█░░
+░░░░▀▀█░█▀▀░█▀█░█░░
+░▀░░▀▀▀░▀▀▀░▀░▀░▀▀▀</pre>
+        </a>
+      </h1>
+      <p class="tag">Only the first inscription is the seal.</p>
     </div>
     <p class="live" id="live">connecting to blocks…</p>
   </header>
 
   <main>
+    <section aria-labelledby="chain-title">
+      <div class="section-head">
+        <h2 id="chain-title">Recent blocks</h2>
+        <p>On the left, blocks still to be mined, with the fees waiting in the mempool. On the right, blocks already mined. A block crosses when it is found, and then its picture appears.</p>
+      </div>
+      <div class="chain" id="chain"></div>
+    </section>
+
     <section aria-labelledby="made-title">
       <div class="section-head">
         <h2 id="made-title">Inscribed</h2>
-        <p>Only confirmed inscriptions in this list appear here. The id links to the explorer. The picture is computed from the block named by the text.</p>
+        <p>Only the first inscription of each text is valid. A later copy is not a seal. Type a height to see if that first text is inscribed. The id links to the explorer.</p>
       </div>
+      <div class="made-tools">
+        <form id="find-form" class="find-row" role="search">
+          <label class="sr" for="find">Height</label>
+          <input id="find" name="find" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="height">
+        </form>
+        <div class="filters" role="group" aria-label="Circles">
+          <button type="button" class="chip on" data-era="all" aria-pressed="true">All</button>
+          <button type="button" class="chip" data-era="5" aria-pressed="false">5 circles</button>
+          <button type="button" class="chip" data-era="4" aria-pressed="false">4 circles</button>
+          <button type="button" class="chip" data-era="3" aria-pressed="false">3 circles</button>
+          <button type="button" class="chip" data-era="2" aria-pressed="false">2 circles</button>
+          <button type="button" class="chip" data-era="1" aria-pressed="false">1 circle</button>
+        </div>
+        <div class="view-switch" role="group" aria-label="View">
+          <button type="button" class="chip on" data-view="grid" aria-pressed="true">Grid</button>
+          <button type="button" class="chip" data-view="list" aria-pressed="false">List</button>
+        </div>
+      </div>
+      <p class="result" id="find-result" role="status"></p>
       <div class="gallery" id="made"></div>
     </section>
 
@@ -39,6 +72,20 @@
     </section>
   </main>
 
-  <script type="module" src="/js/app.js?v=12"></script>
+  <footer class="foot">
+    <a class="mark" href="https://x.com/sealprotocol" target="_blank" rel="noopener noreferrer" aria-label="X">
+      <pre aria-hidden="true">░█░█
+░▄▀▄
+░▀░▀</pre>
+    </a>
+    <a class="mark" href="https://github.com/sealprotocol/seal" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+      <pre aria-hidden="true">░█▀▀░▀█▀░▀█▀
+░█░█░░█░░░█░
+░▀▀▀░▀▀▀░░▀░</pre>
+    </a>
+    <a class="foot-link" href="/how/">How a .seal works</a>
+  </footer>
+
+  <script type="module" src="/js/app.js?v=16"></script>
 </body>
 </html>

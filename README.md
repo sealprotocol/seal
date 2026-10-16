@@ -4,7 +4,7 @@
 
 # SEAL
 
-SEAL is one inscription per Bitcoin block height. The inscription is text. The picture is computed from that block.
+SEAL is one inscription per Bitcoin block height. Only the first inscription of an exact text is valid. The rule is first is first. A later copy of the same text is not a seal. The inscription is text. The picture is computed from the block named by that first text.
 
 The seal of block 0 is the first inscription whose text is exactly:
 
@@ -59,4 +59,6 @@ Eleven seals were confirmed in block 971633. Each body is `text/plain;charset=ut
 
 ## License
 
-You may download this repository, read the specification, and implement it. These files and the seal picture remain the property of .seal. See [LICENSE](LICENSE).
+The specification and the reference drawing are [MIT](LICENSE). Copyright (c) 2026 .seal. Anyone may implement them.
+
+The seal of a height is the first inscription of that exact text. This license does not transfer that inscription.

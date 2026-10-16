@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How a .seal works</title>
+  <link rel="stylesheet" href="/css/app.css?v=15">
+</head>
+<body>
+  <header class="top">
+    <div>
+      <h1>
+        <a class="logo" href="/">
+          <pre aria-label=".seal">░░░░█▀▀░█▀▀░█▀█░█░░
+░░░░▀▀█░█▀▀░█▀█░█░░
+░▀░░▀▀▀░▀▀▀░▀░▀░▀▀▀</pre>
+        </a>
+      </h1>
+      <p class="tag">Only the first inscription is the seal.</p>
+    </div>
+  </header>
+
+  <main>
+    <article class="paper">
+      <div class="section-head">
+        <h2>How a .seal works</h2>
+        <p>Only the first inscription is valid. The rule is first is first. The text names a block height. A later copy of the same text is not a seal. The picture is computed from the block named by that first text.</p>
+      </div>
+
+      <h2>The text</h2>
+      <p>The body is UTF-8. It matches this and nothing else:</p>
+      <pre>^(0|[1-9][0-9]*)\.seal\n?$</pre>
+      <p><code>0.seal</code> is the text of block 0. <code>00.seal</code>, <code>0.Seal</code>, and <code>0.seal </code> are not seals. One trailing newline is allowed. A space, a capital letter, a leading zero, or any other word is not a seal.</p>
+      <p>The number is a block height that already exists when the inscription is confirmed. A text that names a height still ahead of the chain is not a seal.</p>
+
+      <h2>The first inscription</h2>
+      <p>This is the rule. Only the first inscription of an exact text is valid. Inscriptions are taken in confirmation order. For each exact text, the earliest inscription is the seal of that height. A later copy of the same text is not a seal.</p>
+      <p>There is no parent inscription and no child inscription. One inscription has one body, and that body is the text. Copying this page does not create a seal. Only the text does.</p>
+
+      <h2>The picture</h2>
+      <p>The picture belongs to the first inscription only. A later copy of the same text does not receive it. The picture is not stored in the inscription. It is drawn from the block named by that text: the block hash, the timestamp, the number of transactions, and the height.</p>
+      <p>The canvas is 160 by 160. The background is <code>#171b22</code>.</p>
+      <ul>
+        <li>The squares are the last 16 hexadecimal characters of the block hash, not the leading zeros of the proof of work. Each character is four bits, high bit first. The bits fill the left five columns of a 9 by 9 grid, row by row. A bit of 1 lights that square and its mirror on the right. Each square has side 10 and is centered at <code>34 + x × 14</code>, <code>34 + y × 14</code>, in <code>#f7931a</code>.</li>
+        <li>The orange arc is the minute of the block inside its hour, <code>(timestamp % 3600) / 3600</code>. It starts at the top and runs clockwise on the outer circle, radius 72, stroke <code>#f7931a</code>, width 3. A minute near zero still leaves a short mark, 0.04 of the circle.</li>
+        <li>The vertical line is the transaction count, clamped from 1 to 7000. It passes through the center, stroke <code>#c9a227</code>, width 2. A block with one transaction keeps a short line.</li>
+        <li>The outer circle is always present: center <code>80,80</code>, radius 72, stroke <code>#3a2a16</code>, width 2. Inner rings follow the subsidy era. <code>era = floor(height / 210000)</code> and <code>rings = max(1, 5 - era)</code>. The inner circles are <code>#c9a227</code>, width 1.5, radii 60, 50, 40 and 30 from the outside inward. Block 0 has five circles. From height 840000 only the outer circle remains.</li>
+      </ul>
+      <p>The picture has no fee mark. Fees belong to the block list, not to the face of the seal.</p>
+
+      <h2>What is kept</h2>
+      <p>For each seal, keep the inscription id, the height, and the confirmation order that made it first. A second inscription of the same text gets no seal.</p>
+      <p>The inscription stays text. An explorer shows the file as it was inscribed. A wallet that follows the rule keeps the earliest inscription and draws the picture from the block. The same arrangement is used by Bitmap: the file is text, and the picture is computed.</p>
+      <p>The rule an indexer follows is the <a href="https://github.com/sealprotocol/seal/blob/main/specification.md">specification</a>. The drawing in the page is the same rule. The specification and the reference drawing are published so anyone can implement them. Two implementations that follow the rule keep the same first inscription and draw the same picture.</p>
+
+      <h2>This site</h2>
+      <p>The front page reads recent blocks from the public block feed. A block that has not been mined has no hash, so it has no picture. Its card shows the fees waiting in the mempool. When the block is found, it crosses the line and the picture appears.</p>
+      <p>The inscribed list is the first inscription of each text. Any height that already exists can be drawn from its block, whether or not a seal of that text exists yet. The picture is a reading of the block. The seal is only the first inscription of its text.</p>
+    </article>
+  </main>
+
+  <footer class="foot">
+    <a class="mark" href="https://x.com/sealprotocol" target="_blank" rel="noopener noreferrer" aria-label="X">
+      <pre aria-hidden="true">░█░█
+░▄▀▄
+░▀░▀</pre>
+    </a>
+    <a class="mark" href="https://github.com/sealprotocol/seal" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+      <pre aria-hidden="true">░█▀▀░▀█▀░▀█▀
+░█░█░░█░░░█░
+░▀▀▀░▀▀▀░░▀░</pre>
+    </a>
+    <a class="foot-link" href="/how/">How a .seal works</a>
+  </footer>
+</body>
+</html>

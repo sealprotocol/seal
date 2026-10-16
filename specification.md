@@ -8,6 +8,16 @@ A seal is one inscription. Its text is a Bitcoin block height, a dot, and the lo
 
 The first inscription of that exact text is the seal of that height. A later copy of the same text is not a seal.
 
+## Rules
+
+- 1.0 The text is `{height}.seal`.
+- 1.1 The body matches `^(0|[1-9][0-9]*)\.seal\n?$`. The match is case sensitive.
+- 1.2 The height already exists when the inscription is confirmed.
+- 1.3 First is first. Inscriptions are read in confirmation order. The earliest inscription of that exact text is the seal.
+- 1.4 A later copy of the same text is not a seal.
+- 2.0 The picture is not inscribed. It is a function of the block hash, the timestamp, the transaction count, and the height.
+- 2.1 There is no parent inscription. Copying this document does not create a seal. Only the text does.
+
 ## Text
 
 The body is UTF-8. It matches:
