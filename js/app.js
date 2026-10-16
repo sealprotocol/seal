@@ -6,6 +6,7 @@ const findInput = document.querySelector("#find");
 const findResult = document.querySelector("#find-result");
 const chainEl = document.querySelector("#chain");
 const liveEl = document.querySelector("#live");
+const feesEl = document.querySelector("#fees");
 const form = document.querySelector("#look-form");
 const heightInput = document.querySelector("#height");
 const resultEl = document.querySelector("#look-result");
@@ -21,10 +22,11 @@ function ringLabel(height) {
 }
 
 async function blockByHeight(height) {
-  const hashResponse = await fetch(`https://mempool.space/api/block-height/${height}`);
+  const signal = AbortSignal.timeout(20000);
+  const hashResponse = await fetch(`https://mempool.space/api/block-height/${height}`, { signal });
   if (!hashResponse.ok) throw new Error("altezza");
   const hash = (await hashResponse.text()).trim();
-  const blockResponse = await fetch(`https://mempool.space/api/block/${hash}`);
+  const blockResponse = await fetch(`https://mempool.space/api/block/${hash}`, { signal });
   if (!blockResponse.ok) throw new Error("blocco");
   return blockResponse.json();
 }
@@ -35,6 +37,14 @@ function shortId(id) {
 
 function escapeText(value) {
   return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+}
+
+function storedBlock(seal) {
+  if (typeof seal.hash !== "string" || !/^[0-9a-f]{64}$/i.test(seal.hash)) return null;
+  const timestamp = Number(seal.timestamp);
+  const txCount = Number(seal.tx_count);
+  if (!Number.isFinite(timestamp) || !Number.isFinite(txCount)) return null;
+  return { id: seal.hash, height: seal.height, timestamp, tx_count: txCount };
 }
 
 function sealCard(seal, block) {
@@ -104,48 +114,43 @@ function renderMade() {
   }).join("");
 }
 
-async function paintMade() {
-  let seals = [];
-  try {
-    const response = await fetch("/seals.json", { cache: "no-store" });
-    if (response.ok) seals = await response.json();
-    if (!response.ok || !Array.isArray(seals)) {
-      madeState = "failed";
-      made = [];
-      renderMade();
-      return;
-    }
-  } catch {
+async function paintMade(seals) {
+  if (!Array.isArray(seals)) {
     madeState = "failed";
     made = [];
     renderMade();
     return;
   }
-  const cards = await Promise.all(seals.map(async (seal) => {
-    if (!seal || !Number.isInteger(seal.height) || seal.height < 0 || typeof seal.id !== "string" || !seal.id) {
-      return null;
-    }
-    try {
-      const block = await blockByHeight(seal.height);
-      return { height: seal.height, html: sealCard(seal, block) };
-    } catch {
-      return {
-        height: seal.height,
-        html: `
-          <article class="seal" data-height="${seal.height}">
-            <div>
-              <span>${seal.height}.seal</span>
-              <small>Block unreachable.</small>
-              <a href="https://ordinals.com/inscription/${encodeURIComponent(seal.id)}" title="${escapeText(seal.id)}">${escapeText(shortId(seal.id))}</a>
-            </div>
-          </article>
-        `,
-      };
-    }
-  }));
-  made = cards.filter(Boolean);
+  const ready = [];
+  const missing = [];
+  for (const seal of seals) {
+    if (!seal || !Number.isInteger(seal.height) || seal.height < 0 || typeof seal.id !== "string" || !seal.id) continue;
+    const stored = storedBlock(seal);
+    if (stored) ready.push({ height: seal.height, html: sealCard(seal, stored), seal });
+    else missing.push(seal);
+  }
+  made = ready;
   madeState = "ready";
   renderMade();
+  for (const seal of missing) {
+    let html;
+    try {
+      html = sealCard(seal, await blockByHeight(seal.height));
+    } catch {
+      html = `
+        <article class="seal" data-height="${seal.height}">
+          <div>
+            <span>${seal.height}.seal</span>
+            <small>Block unreachable.</small>
+            <a href="https://ordinals.com/inscription/${encodeURIComponent(seal.id)}" title="${escapeText(seal.id)}">${escapeText(shortId(seal.id))}</a>
+          </div>
+        </article>
+      `;
+    }
+    made = made.concat([{ height: seal.height, html, seal }]);
+    renderMade();
+  }
+  if (shownBlock) showBlock(shownBlock);
 }
 
 findInput.addEventListener("input", renderMade);
@@ -180,18 +185,41 @@ document.querySelector(".view-switch").addEventListener("click", (event) => {
   renderMade();
 });
 
+let shownBlock = null;
+
+function shortAddress(address) {
+  const text = String(address || "");
+  return text.length <= 20 ? text : `${text.slice(0, 8)}…${text.slice(-6)}`;
+}
+
+function lookupSeal(height) {
+  return made.find((item) => item.height === height)?.seal || null;
+}
+
 function showBlock(block) {
+  shownBlock = block;
+  const seal = lookupSeal(block.height);
+  const name = `${Number(block.height).toLocaleString("en-US")}.seal`;
+  const owner = seal?.address
+    ? `<p class="holder" title="${escapeText(seal.address)}">${escapeText(shortAddress(seal.address))}</p>`
+    : "";
+  const inscription = seal
+    ? `<a class="seal-id" href="https://ordinals.com/inscription/${encodeURIComponent(seal.id)}" title="${escapeText(seal.id)}">${escapeText(shortId(seal.id))}</a>`
+    : "";
   stageEl.innerHTML = `
     <div class="stage">
       ${glyphSvg(block)}
       <div>
         <p class="only-name">${block.height}.seal</p>
         <p class="facts">${ringLabel(block.height)} · ${Number(block.tx_count).toLocaleString("en-US")} tx</p>
+        <p class="facts">${seal ? "Inscribed." : "Not inscribed."}</p>
+        ${owner}
+        ${inscription}
       </div>
     </div>
   `;
   resultEl.className = "result";
-  resultEl.textContent = "Picture of the block.";
+  resultEl.textContent = seal ? `${name} is inscribed.` : `${name} is not inscribed.`;
 }
 
 form.addEventListener("submit", async (event) => {
@@ -275,14 +303,22 @@ function paintChain(blocks, pending) {
   `;
   if (!gateCentered || arrived) {
     requestAnimationFrame(() => {
-      const gate = chainEl.querySelector(".gate");
-      if (!gate) return;
-      const gateBox = gate.getBoundingClientRect();
-      const chainBox = chainEl.getBoundingClientRect();
-      chainEl.scrollLeft += gateBox.left - chainBox.left - (chainEl.clientWidth - gateBox.width) / 2;
+      centerGate();
       gateCentered = true;
     });
   }
+}
+
+function centerGate() {
+  const gate = chainEl.querySelector(".gate");
+  if (!gate) return;
+  const fits = chainEl.scrollWidth <= chainEl.clientWidth + 1;
+  chainEl.style.justifyContent = fits ? "center" : "flex-start";
+  if (fits) {
+    chainEl.scrollLeft = 0;
+    return;
+  }
+  chainEl.scrollLeft = gate.offsetLeft - (chainEl.clientWidth - gate.offsetWidth) / 2;
 }
 
 chainEl.addEventListener("click", (event) => {
@@ -298,12 +334,15 @@ chainEl.addEventListener("click", (event) => {
 let latestBlocks = [];
 let seenTip = 0;
 let gateCentered = false;
+let tipBusy = false;
 
 async function paintTip() {
+  if (tipBusy) return;
+  tipBusy = true;
   try {
     const [blockResponse, pendingResponse] = await Promise.all([
-      fetch("https://mempool.space/api/v1/blocks"),
-      fetch("https://mempool.space/api/v1/fees/mempool-blocks"),
+      fetch("https://mempool.space/api/v1/blocks", { signal: AbortSignal.timeout(20000) }),
+      fetch("https://mempool.space/api/v1/fees/mempool-blocks", { signal: AbortSignal.timeout(20000) }),
     ]);
     if (!blockResponse.ok || !pendingResponse.ok) throw new Error("blocks");
     latestBlocks = await blockResponse.json();
@@ -312,10 +351,60 @@ async function paintTip() {
     liveEl.textContent = tip ? `latest block ${Number(tip).toLocaleString("en-US")}` : "blocks unreachable";
     paintChain(latestBlocks, Array.isArray(pending) ? pending : []);
   } catch {
-    liveEl.textContent = "blocks unreachable";
+    if (!latestBlocks.length) liveEl.textContent = "blocks unreachable";
+  } finally {
+    tipBusy = false;
   }
 }
 
-paintMade();
+let sealFile = "";
+
+async function reloadSeals() {
+  try {
+    const response = await fetch("/seals.json", { cache: "no-store" });
+    if (!response.ok) throw new Error("list");
+    const text = await response.text();
+    if (text === sealFile) return;
+    sealFile = text;
+    await paintMade(JSON.parse(text));
+  } catch {
+    if (!sealFile) {
+      madeState = "failed";
+      made = [];
+      renderMade();
+    }
+  }
+}
+
+function feeLine(value, label) {
+  const rate = Number(value);
+  const shown = Number.isFinite(rate) ? Math.round(rate).toLocaleString("en-US") : "—";
+  return `<span><b>${shown}</b><span class="k">${label}</span></span>`;
+}
+
+let feesReady = false;
+
+async function reloadFees() {
+  try {
+    const response = await fetch("https://mempool.space/api/v1/fees/recommended", { signal: AbortSignal.timeout(8000) });
+    if (!response.ok) throw new Error("fees");
+    const fees = await response.json();
+    feesEl.innerHTML = [
+      feeLine(fees.fastestFee, "next"),
+      feeLine(fees.halfHourFee, "30m"),
+      feeLine(fees.hourFee, "1h"),
+      `<span class="unit">sat/vB</span>`,
+    ].join("");
+    feesReady = true;
+  } catch {
+    if (!feesReady) feesEl.textContent = "—";
+  }
+}
+
+reloadSeals();
 paintTip();
+reloadFees();
 setInterval(paintTip, 20000);
+setInterval(reloadFees, 20000);
+setInterval(reloadSeals, 30000);
+window.addEventListener("resize", centerGate);

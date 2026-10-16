@@ -23,7 +23,7 @@
   <meta name="twitter:title" content=".seal">
   <meta name="twitter:description" content="Only the first inscription is the seal.">
   <meta name="twitter:image" content="https://sealprotocol.art/og.png">
-  <link rel="stylesheet" href="/css/app.css?v=16">
+  <link rel="stylesheet" href="/css/app.css?v=19">
 </head>
 <body>
   <header class="top">
@@ -37,7 +37,16 @@
       </h1>
       <p class="tag">Only the first inscription is the seal.</p>
     </div>
-    <p class="live" id="live">connecting to blocks…</p>
+    <div class="status">
+      <div class="meters">
+        <pre class="sigil" aria-label="Bitcoin"> ▄█▄▄▄▀▄&#10;█ █▄▄▄▀▄▀&#10;█ █▄▄▄▀▄▀&#10;▀▄█▄▄▄▀▄▀&#10;  ▀   ▀</pre>
+        <div class="pump" role="group" aria-label="Current fees, sat/vB">
+          <pre class="sigil" aria-hidden="true"> █▀▀▀▀▀█&#10; █▄███▄█&#10;   █  ▄▄&#10;   █▄▄▀&#10; ▄█   █▄</pre>
+          <p class="fee-now" id="fees" aria-live="polite">—</p>
+        </div>
+      </div>
+      <p class="live" id="live">connecting to blocks…</p>
+    </div>
   </header>
 
   <main>
@@ -105,6 +114,6 @@
     <a class="foot-link" href="/how/">How a .seal works</a>
   </footer>
 
-  <script type="module" src="/js/app.js?v=16"></script>
+  <script type="module" src="/js/app.js?v=20"></script>
 </body>
 </html>
