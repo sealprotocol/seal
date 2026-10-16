@@ -46,7 +46,7 @@ Canvas `0 0 160 160`. Background `#171b22`.
 
 Outer circle, center `80,80`, radius `72`, stroke `#3a2a16`, width `2`. This circle is always present.
 
-Rings follow the subsidy era. `era = floor(height / 210000)`. `rings = max(1, 5 - era)`. Draw `rings - 1` inner circles, center `80,80`, stroke `#c9a227`, width `1.5`, radii `60`, `50`, `40`, `30` from the outside inward. Block 0 has five circles in total. From height `840000` onward, only the outer circle remains.
+Rings follow the first five subsidy eras, the early halvings. `era = floor(height / 210000)`. `rings = max(1, 5 - era)`. Draw `rings - 1` inner circles, center `80,80`, stroke `#c9a227`, width `1.5`, radii `60`, `50`, `40`, `30` from the outside inward. Block 0 has five circles in total. From height `840000` onward, through every later halving, only the outer circle remains.
 
 Arc: `minute = (timestamp % 3600) / 3600`. Start at the top, angle `-π/2`. End at `-π/2 + max(minute, 0.04) × 2π`, clockwise in SVG (sweep flag `1`). Radius `72`. Stroke `#f7931a`, width `3`, round cap. The large-arc flag is `1` when `minute > 0.5`.
 

@@ -31,7 +31,7 @@ The picture is not stored in the inscription. It is drawn from the block named b
 - The squares are the last 16 hexadecimal characters of the block hash. They fill the left half of a 9×9 grid. The right half is the mirror.
 - The orange arc is the minute of the block timestamp, starting from the top of the hour.
 - The vertical line is the transaction count, from 1 to 7000.
-- The circles follow the block subsidy. Block 0 has five. Each halving removes one, down to one circle from height 840000 on.
+- The circles follow the first five subsidy eras, the early halvings. Block 0 has five. Each of those halvings removes one. From height 840000 on, only one circle remains.
 
 The exact measures and colors are in [specification.md](specification.md). The same drawing is in [js/glyph.js](js/glyph.js).
 
