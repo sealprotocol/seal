@@ -525,6 +525,10 @@ function lookupSeal(height) {
   return made.find((item) => item.height === height)?.seal || null;
 }
 
+function hasFee(item) {
+  return Number.isFinite(Number(item.fee));
+}
+
 function pendingFor(height) {
   return pending.filter((item) => Number(item.height) === Number(height) && /^[0-9a-f]{64}$/i.test(item.txid || ""));
 }
@@ -538,20 +542,30 @@ function satVb(rate) {
 
 function pendingHtml(rows) {
   if (!rows.length) return "";
-  const head = rows.length === 1
-    ? "In the mempool. Not a seal until it confirms."
-    : "In the mempool. The first to confirm is the seal.";
+  const priced = rows.every(hasFee);
+  let head;
+  if (priced) {
+    head = rows.length === 1
+      ? "In the mempool. Not a seal until it confirms."
+      : "In the mempool. The first to confirm is the seal.";
+  } else {
+    head = rows.length === 1
+      ? "Sent. Not a seal until it confirms."
+      : "Sent. The first to confirm is the seal.";
+  }
   const attempts = rows.map((item) => {
     const address = item.address
       ? `<p class="holder" title="${escapeText(item.address)}">${escapeText(shortAddress(item.address))}</p>`
       : "";
     const rate = satVb(item.rate);
-    const fee = `${Number(item.fee || 0).toLocaleString("en-US")} sat${rate ? ` · ${rate} sat/vB` : ""}`;
+    const fee = hasFee(item)
+      ? `<p class="facts">${Number(item.fee).toLocaleString("en-US")} sat${rate ? ` · ${rate} sat/vB` : ""}</p>`
+      : "";
     const tx = `https://mempool.space/tx/${item.txid}`;
     return `
       <div class="attempt">
         ${address}
-        <p class="facts">${fee}</p>
+        ${fee}
         <a class="seal-id" href="${tx}" target="_blank" rel="noopener noreferrer" title="${escapeText(item.txid)}">${escapeText(shortId(item.txid))}</a>
       </div>
     `;
@@ -578,7 +592,7 @@ function showBlock(block) {
   shownBlock = block;
   const seal = lookupSeal(block.height);
   const rows = seal ? [] : pendingFor(block.height);
-  const key = `${block.id}|${seal?.id || ""}|${rows.map((item) => item.txid).join(",")}`;
+  const key = `${block.id}|${seal?.id || ""}|${rows.map((item) => `${item.txid}:${item.fee ?? ""}:${item.rate ?? ""}`).join(",")}`;
   if (key === shownKey) return;
   shownKey = key;
   const name = `${Number(block.height).toLocaleString("en-US")}.seal`;
@@ -595,7 +609,7 @@ function showBlock(block) {
       <div>
         <p class="only-name">${block.height}.seal</p>
         <p class="facts">${ringLabel(block.height)} · ${Number(block.tx_count).toLocaleString("en-US")} tx</p>
-        <p class="facts">${seal ? "Inscribed." : "Not inscribed."}</p>
+        <p class="facts">${seal ? "Inscribed." : rows.some(hasFee) ? "In the mempool." : rows.length ? "Sent." : "Not inscribed."}</p>
         ${owner}
         ${inscription}
         ${waiting}
@@ -604,7 +618,8 @@ function showBlock(block) {
   `;
   resultEl.className = "result";
   if (seal) resultEl.textContent = `${name} is inscribed.`;
-  else if (rows.length) resultEl.textContent = `${name} is in the mempool.`;
+  else if (rows.some(hasFee)) resultEl.textContent = `${name} is in the mempool.`;
+  else if (rows.length) resultEl.textContent = `${name} is sent.`;
   else resultEl.textContent = `${name} is not inscribed.`;
 }
 

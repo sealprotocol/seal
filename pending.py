@@ -17,9 +17,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 PENDING = Path(os.environ.get("SEAL_PENDING", ROOT / "pending.json"))
 MEMPOOL = "https://mempool.space/api"
+UNISAT = "https://open-api.unisat.io"
+TOKEN = os.environ.get("SEAL_UNISAT_TOKEN", "").strip()
 TEXT = re.compile(r"^(0|[1-9][0-9]*)\.seal\n?$")
+TXID = re.compile(r"^[0-9a-f]{64}$")
 UA = {"user-agent": "sealprotocol-pending/1", "accept": "*/*"}
 PAUSE = 15
+UNISAT_PAUSE = 90
+SENT_FOR = 2 * 60 * 60
 SAMPLE = (
     "20fae11cc0eb253263f093794d435c0ed49d8f5fc2aec54ac5abc72f3ad032d11e"
     "ac0063036f7264010118746578742f706c61696e3b636861727365743d7574662d"
@@ -27,8 +32,8 @@ SAMPLE = (
 )
 
 
-def fetch(url, timeout=40):
-    request = urllib.request.Request(url, headers=UA)
+def fetch(url, timeout=40, headers=None):
+    request = urllib.request.Request(url, headers=headers or UA)
     delay = 1
     last = None
     for _ in range(4):
@@ -225,6 +230,96 @@ def inspect(txid, tip):
     return rows
 
 
+def seal_from_event(item, tip):
+    if not isinstance(item, dict) or item.get("isTransfer"):
+        return None
+    if not str(item.get("contentType") or "").startswith("text/plain"):
+        return None
+    body = item.get("contentBody")
+    if not isinstance(body, str):
+        return None
+    body = body.replace("\r\n", "\n").replace("\r", "\n")
+    match = TEXT.fullmatch(body)
+    if not match:
+        return None
+    height = int(match.group(1))
+    if tip is not None and height > tip:
+        return None
+    txid = str(item.get("txid") or "").lower()
+    if not TXID.fullmatch(txid):
+        return None
+    return {
+        "height": height,
+        "txid": txid,
+        "address": item.get("address") or "",
+    }
+
+
+def unisat_page(tip, cursor, size):
+    headers = dict(UA)
+    headers["authorization"] = f"Bearer {TOKEN}"
+    raw = fetch(
+        f"{UNISAT}/v1/indexer/inscription/events?start={tip}&end=0&cursor={cursor}&size={size}",
+        headers=headers,
+    )
+    data = json.loads(raw)
+    if data.get("code") not in (0, None):
+        raise RuntimeError(data.get("msg") or "unisat")
+    return data.get("data") or {}
+
+
+def unisat_seals(tip, now, last):
+    if not TOKEN or tip is None or now - last < UNISAT_PAUSE:
+        return None, last
+    try:
+        # Mempool rows sit at the high end. One count, then the newest page.
+        first = unisat_page(tip + 1, 0, 1)
+        total = int(first.get("total") or 0)
+        detail = list(unisat_page(tip + 1, max(0, total - 500), 500).get("detail") or [])
+    except (RuntimeError, ValueError, TypeError, json.JSONDecodeError) as error:
+        print(f"unisat {error}", flush=True)
+        return None, now
+    rows = []
+    seen = set()
+    for item in detail:
+        row = seal_from_event(item, tip)
+        if not row:
+            continue
+        key = (row["txid"], row["height"])
+        if key in seen:
+            continue
+        seen.add(key)
+        rows.append(row)
+    print(f"unisat {len(rows)}", flush=True)
+    return rows, now
+
+
+def remember(pending, known, row, now):
+    key = (row["txid"], row["height"])
+    if key not in known:
+        if "since" not in row:
+            row["since"] = int(now)
+        pending.append(row)
+        known.add(key)
+        return
+    current = next(item for item in pending if (item["txid"], item["height"]) == key)
+    if row.get("address") and not current.get("address"):
+        current["address"] = row["address"]
+    if "fee" in row and "fee" not in current:
+        current["fee"] = row["fee"]
+    if "rate" in row and "rate" not in current:
+        current["rate"] = row["rate"]
+
+
+def waiting(item, current, now):
+    if item.get("txid") in current:
+        return True
+    if "fee" in item:
+        return False
+    since = int(item.get("since") or 0)
+    return since > 0 and now - since < SENT_FOR
+
+
 def check():
     content_type, body = envelopes(bytes.fromhex(SAMPLE))[0]
     if content_type != "text/plain;charset=utf-8" or body != b"0.seal":
@@ -238,7 +333,51 @@ def check():
     }
     if carrier(tx, 0) != "first" or carrier(tx, 1) != "second":
         raise SystemExit("carrier")
+    event = {
+        "contentType": "text/plain;charset=utf-8",
+        "contentBody": "10.seal",
+        "txid": "ab" * 32,
+        "address": "bc1qexample",
+    }
+    row = seal_from_event(event, 10)
+    if not row or row["height"] != 10 or row["address"] != "bc1qexample":
+        raise SystemExit("event")
+    if seal_from_event({**event, "contentBody": "10.seal "}, 10):
+        raise SystemExit("event space")
+    if seal_from_event({**event, "isTransfer": True}, 10):
+        raise SystemExit("event transfer")
     print("ok", flush=True)
+
+
+def settle(pending, current, found, early, now):
+    pending = [item for item in pending if waiting(item, current, now)]
+    known = {(item["txid"], item["height"]) for item in pending}
+    for row in early or []:
+        remember(pending, known, row, now)
+    for row in found:
+        remember(pending, known, row, now)
+    return pending
+
+
+def enrich(pending, current, tip, now):
+    missing = []
+    seen = set()
+    for item in pending:
+        txid = item.get("txid")
+        if txid in current and "fee" not in item and txid not in seen:
+            seen.add(txid)
+            missing.append(txid)
+    if not missing:
+        return pending
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        opened = list(pool.map(lambda txid: inspect(txid, tip), missing))
+    known = {(item["txid"], item["height"]) for item in pending}
+    for rows in opened:
+        if not rows:
+            continue
+        for row in rows:
+            remember(pending, known, row, now)
+    return pending
 
 
 def main():
@@ -247,13 +386,15 @@ def main():
         return
     pending = load_pending()
     current = set(txids())
-    pending = [item for item in pending if item["txid"] in current]
     seen = set(current)
+    now = time.time()
+    tip = tip_height(None)
+    early, unisat_at = unisat_seals(tip, now, 0)
+    pending = enrich(settle(pending, current, [], early, now), current, tip, now)
     write_pending(pending)
     print(f"snapshot {len(seen)} pending {len(pending)}", flush=True)
     if "--once" in sys.argv:
         return
-    tip = None
     while True:
         started = time.time()
         try:
@@ -273,13 +414,9 @@ def main():
                     continue
                 seen.add(txid)
                 found.extend(rows)
-        pending = [item for item in pending if item["txid"] in current]
-        known = {(item["txid"], item["height"]) for item in pending}
-        for row in found:
-            key = (row["txid"], row["height"])
-            if key not in known:
-                pending.append(row)
-                known.add(key)
+        now = time.time()
+        early, unisat_at = unisat_seals(tip, now, unisat_at)
+        pending = enrich(settle(pending, current, found, early, now), current, tip, now)
         seen &= current
         write_pending(pending)
         print(f"round fresh {len(fresh)} pending {len(pending)}", flush=True)
