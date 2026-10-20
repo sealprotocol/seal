@@ -609,7 +609,7 @@ function showBlock(block) {
       <div>
         <p class="only-name">${block.height}.seal</p>
         <p class="facts">${ringLabel(block.height)} · ${Number(block.tx_count).toLocaleString("en-US")} tx</p>
-        <p class="facts">${seal ? "Inscribed." : rows.some(hasFee) ? "In the mempool." : rows.length ? "Sent." : "Not inscribed."}</p>
+        ${seal ? `<p class="facts">Inscribed.</p>` : rows.length ? "" : `<p class="facts">Not inscribed.</p>`}
         ${owner}
         ${inscription}
         ${waiting}

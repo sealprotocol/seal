@@ -23,7 +23,7 @@ TEXT = re.compile(r"^(0|[1-9][0-9]*)\.seal\n?$")
 TXID = re.compile(r"^[0-9a-f]{64}$")
 UA = {"user-agent": "sealprotocol-pending/1", "accept": "*/*"}
 PAUSE = 15
-UNISAT_PAUSE = 90
+UNISAT_PAUSE = 180
 SENT_FOR = 2 * 60 * 60
 SAMPLE = (
     "20fae11cc0eb253263f093794d435c0ed49d8f5fc2aec54ac5abc72f3ad032d11e"
@@ -32,11 +32,11 @@ SAMPLE = (
 )
 
 
-def fetch(url, timeout=40, headers=None):
+def fetch(url, timeout=40, headers=None, tries=4):
     request = urllib.request.Request(url, headers=headers or UA)
     delay = 1
     last = None
-    for _ in range(4):
+    for _ in range(tries):
         try:
             with urllib.request.urlopen(request, timeout=timeout) as response:
                 return response.read()
@@ -261,6 +261,7 @@ def unisat_page(tip, cursor, size):
     raw = fetch(
         f"{UNISAT}/v1/indexer/inscription/events?start={tip}&end=0&cursor={cursor}&size={size}",
         headers=headers,
+        tries=1,
     )
     data = json.loads(raw)
     if data.get("code") not in (0, None):
