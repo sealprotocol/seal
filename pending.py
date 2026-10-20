@@ -23,7 +23,7 @@ TEXT = re.compile(r"^(0|[1-9][0-9]*)\.seal\n?$")
 TXID = re.compile(r"^[0-9a-f]{64}$")
 UA = {"user-agent": "sealprotocol-pending/1", "accept": "*/*"}
 PAUSE = 15
-UNISAT_PAUSE = 180
+UNISAT_PAUSE = 90
 SENT_FOR = 2 * 60 * 60
 SAMPLE = (
     "20fae11cc0eb253263f093794d435c0ed49d8f5fc2aec54ac5abc72f3ad032d11e"
