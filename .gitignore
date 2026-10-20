@@ -3,5 +3,9 @@ indexer-message.txt
 xverse-message.txt
 wallet-inscribe.txt
 marketplace.txt
+seal-wallet.txt
+ordinals-wallet-message.txt
 .watch-state.json
 watch.log
+pending.json
+__pycache__/

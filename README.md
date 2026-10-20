@@ -28,7 +28,7 @@ The number is a block height that already exists when the inscription is confirm
 
 The picture is not stored in the inscription. It is drawn from the block named by the text.
 
-- The squares are the last 16 hexadecimal characters of the block hash. They fill the left half of a 9×9 grid. The right half is the mirror.
+- The squares are the last 16 hexadecimal characters of the block hash. They fill the left five columns of a 9×9 grid, 45 bits. The right half is the mirror and adds none. There are 2^45 figures, 35184372088832. Each figure is one of them. That count is the same for every figure.
 - The orange arc is the minute of the block timestamp, starting from the top of the hour.
 - The vertical line is the transaction count, from 1 to 7000.
 - The circles follow the first five subsidy eras, the early halvings. Block 0 has five. Each of those halvings removes one. From height 840000 on, only one circle remains.

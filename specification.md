@@ -54,6 +54,8 @@ Vertical line: clamp the transaction count to `1..7000`. `half = 8 + (count - 1)
 
 Squares: take the last 16 hexadecimal characters of the block hash. Each character yields four bits, high bit first. Fill a `9×9` grid from the left five columns, row by row. A bit of `1` lights that cell and its mirror in the right half. Cell column `x`, row `y` is a square of side `10`, centered at `34 + x × 14`, `34 + y × 14`, fill `#f7931a`.
 
+The left five columns are 45 bits. Nine rows, five bits in each row. The mirror copies those bits and adds none. There are `2^45` figures, `35184372088832`. Each figure is one of them. That count is the rarity of the squares. It is the same for every figure. The rule gives no rank and no score.
+
 ## What an indexer stores
 
 For each seal: the inscription id, the height, and the confirmation order that made it first. A second inscription of the same text gets no seal.

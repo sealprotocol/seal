@@ -16,6 +16,10 @@ function bitsFromHash(hash) {
   return bits;
 }
 
+export function figureBits(hash) {
+  return bitsFromHash(hash).slice(0, GRID * 5);
+}
+
 function litCells(hash) {
   const bits = bitsFromHash(hash);
   const cells = new Set();

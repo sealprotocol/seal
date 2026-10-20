@@ -23,7 +23,7 @@
   <meta name="twitter:title" content=".seal">
   <meta name="twitter:description" content="Only the first inscription is the seal.">
   <meta name="twitter:image" content="https://sealprotocol.art/og.png">
-  <link rel="stylesheet" href="/css/app.css?v=19">
+  <link rel="stylesheet" href="/css/app.css?v=22">
 </head>
 <body>
   <header class="top">
@@ -61,7 +61,7 @@
     <section aria-labelledby="made-title">
       <div class="section-head">
         <h2 id="made-title">Inscribed</h2>
-        <p>Only the first inscription of each text is valid. A later copy is not a seal. Type a height to see if that first text is inscribed. The id links to the explorer.</p>
+        <p>Only the first inscription of each text is valid. A later copy is not a seal. Click a seal to read its holder, its transaction, and the picture. The id links to the explorer.</p>
       </div>
       <div class="made-tools">
         <form id="find-form" class="find-row" role="search">
@@ -82,7 +82,9 @@
         </div>
       </div>
       <p class="result" id="find-result" role="status"></p>
+      <nav class="pages" id="pages" aria-label="Inscribed pages" hidden></nav>
       <div class="gallery" id="made"></div>
+      <nav class="pages" id="pages-after" aria-label="Inscribed pages" hidden></nav>
     </section>
 
     <section aria-labelledby="look-title">
@@ -114,6 +116,13 @@
     <a class="foot-link" href="/how/">How a .seal works</a>
   </footer>
 
-  <script type="module" src="/js/app.js?v=20"></script>
+  <dialog id="seal-dialog" class="seal-dialog" aria-labelledby="seal-dialog-title">
+    <div class="seal-dialog-bar">
+      <button type="button" class="chip" id="seal-dialog-close">Close</button>
+    </div>
+    <div id="seal-dialog-body"></div>
+  </dialog>
+
+  <script type="module" src="/js/app.js?v=24"></script>
 </body>
 </html>
