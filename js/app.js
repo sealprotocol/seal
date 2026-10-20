@@ -259,10 +259,16 @@ let madeState = "loading";
 let era = "all";
 let view = "grid";
 let page = 1;
-const PAGE_SIZE = 24;
+let shownSize = 24;
+
+function pageSize() {
+  if (view === "list" || window.matchMedia("(max-width: 700px)").matches) return 24;
+  const columns = getComputedStyle(madeEl).gridTemplateColumns.split(" ").filter(Boolean).length;
+  return columns === 5 ? 25 : 24;
+}
 
 function pageCount(total) {
-  return Math.max(1, Math.ceil(total / PAGE_SIZE));
+  return Math.max(1, Math.ceil(total / pageSize()));
 }
 
 function pageWindow(pages) {
@@ -315,6 +321,7 @@ function filtered(query) {
 
 function renderMade() {
   madeEl.className = view === "list" ? "gallery list" : "gallery";
+  shownSize = pageSize();
   const query = findInput.value.trim();
   const heightOk = /^(0|[1-9][0-9]*)$/.test(query);
   if (madeState === "loading") {
@@ -359,8 +366,9 @@ function renderMade() {
     return;
   }
   renderPagers(shown.length);
-  const start = (page - 1) * PAGE_SIZE;
-  madeEl.innerHTML = shown.slice(start, start + PAGE_SIZE).map((item) => {
+  const size = pageSize();
+  const start = (page - 1) * size;
+  madeEl.innerHTML = shown.slice(start, start + size).map((item) => {
     const hit = query && String(item.height) === query ? " hit" : "";
     return item.html.replace('class="seal"', `class="seal${hit}"`);
   }).join("");
@@ -416,7 +424,7 @@ findForm.addEventListener("submit", (event) => {
   const query = findInput.value.trim();
   if (/^(0|[1-9][0-9]*)$/.test(query)) {
     const index = filtered(query).findIndex((item) => String(item.height) === query);
-    if (index >= 0) page = Math.floor(index / PAGE_SIZE) + 1;
+    if (index >= 0) page = Math.floor(index / pageSize()) + 1;
   }
   renderMade();
   const hit = madeEl.querySelector(".seal.hit");
@@ -484,13 +492,24 @@ document.querySelector("#seal-dialog-close").addEventListener("click", () => {
 document.querySelector(".view-switch").addEventListener("click", (event) => {
   const button = event.target.closest("[data-view]");
   if (!button) return;
+  const index = (page - 1) * shownSize;
   view = button.dataset.view;
+  madeEl.className = view === "list" ? "gallery list" : "gallery";
+  page = Math.floor(index / pageSize()) + 1;
   document.querySelectorAll("[data-view]").forEach((item) => {
     const on = item === button;
     item.classList.toggle("on", on);
     item.setAttribute("aria-pressed", on ? "true" : "false");
   });
   renderMade();
+});
+
+window.addEventListener("resize", () => {
+  const next = pageSize();
+  if (next === shownSize) return;
+  const index = (page - 1) * shownSize;
+  page = Math.floor(index / next) + 1;
+  if (madeState === "ready") renderMade();
 });
 
 let shownBlock = null;

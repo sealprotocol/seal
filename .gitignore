@@ -9,3 +9,4 @@ ordinals-wallet-message.txt
 watch.log
 pending.json
 __pycache__/
+.cursor/
