@@ -482,6 +482,13 @@ button:hover { filter: brightness(1.05); }
 }
 
 .paper { max-width: 68ch; }
+.paper video {
+  width: 100%;
+  height: auto;
+  margin: 16px 0 0;
+  background: var(--panel);
+  display: block;
+}
 .paper h2 { margin: 28px 0 0; }
 .paper p { margin: 10px 0 0; }
 .paper ul { margin: 10px 0 0; padding-left: 1.15em; }

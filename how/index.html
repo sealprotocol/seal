@@ -23,7 +23,7 @@
   <meta name="twitter:title" content="How a .seal works">
   <meta name="twitter:description" content="Only the first inscription is the seal.">
   <meta name="twitter:image" content="https://sealprotocol.art/og.png">
-  <link rel="stylesheet" href="/css/app.css?v=19">
+  <link rel="stylesheet" href="/css/app.css?v=23">
 </head>
 <body>
   <header class="top">
@@ -57,6 +57,10 @@
       <p>There is no parent inscription and no child inscription. One inscription has one body, and that body is the text. Copying this page does not create a seal. Only the text does.</p>
 
       <h2>The picture</h2>
+      <video controls playsinline preload="metadata" poster="/og.png" width="1280" height="720">
+        <source src="/0-seal.mp4" type="video/mp4">
+      </video>
+      <p>0.seal, the seal of block 0.</p>
       <p>The picture belongs to the first inscription only. A later copy of the same text does not receive it. The picture is not stored in the inscription. It is drawn from the block named by that text: the block hash, the timestamp, the number of transactions, and the height.</p>
       <p>The canvas is 160 by 160. The background is <code>#171b22</code>.</p>
       <ul>
@@ -104,7 +108,6 @@
 ░▀▀▀░▀▀▀░░▀░</pre>
     </a>
     <a class="foot-link" href="/how/">How a .seal works</a>
-    <a class="foot-link" href="/0-seal/">0.seal</a>
   </footer>
 </body>
 </html>
