@@ -102,6 +102,21 @@ function rowList(rows) {
   return `Rows ${labels.slice(0, -1).join(", ")}, and ${labels[labels.length - 1]}`;
 }
 
+const confirmedTimes = new Map();
+
+async function confirmedClock(height) {
+  if (confirmedTimes.has(height)) return confirmedTimes.get(height);
+  const hashResponse = await fetch(`https://mempool.space/api/block-height/${height}`, { signal: AbortSignal.timeout(20000) });
+  if (!hashResponse.ok) throw new Error("height");
+  const hash = (await hashResponse.text()).trim();
+  const blockResponse = await fetch(`https://mempool.space/api/block/${encodeURIComponent(hash)}`, { signal: AbortSignal.timeout(20000) });
+  if (!blockResponse.ok) throw new Error("block");
+  const body = await blockResponse.json();
+  const clock = blockClock(body.timestamp);
+  confirmedTimes.set(height, clock);
+  return clock;
+}
+
 function blockClock(unix) {
   const formatted = new Intl.DateTimeFormat("en-GB", {
     timeZone: "UTC",
@@ -176,7 +191,7 @@ function sheetHtml(item) {
   const identity = `
     <p class="mono">${inscription}</p>
     ${number ? `<p class="mono muted">Inscription ${number}</p>` : ""}
-    ${confirmed ? `<p class="mono muted">Confirmed in block ${confirmed}</p>` : ""}
+    ${confirmed ? `<p class="mono muted" data-confirmed="${seal.confirmed}">Confirmed in block ${confirmed}</p>` : ""}
   `;
   if (!block) {
     return `
@@ -464,6 +479,13 @@ function openSeal(height) {
   sealDialogBody.innerHTML = sheetHtml(item);
   if (!sealDialog.open) sealDialog.showModal();
   document.querySelector("#seal-dialog-close").focus();
+  const slot = sealDialogBody.querySelector("[data-confirmed]");
+  const confirmed = Number(slot?.dataset.confirmed);
+  if (!slot || !Number.isInteger(confirmed)) return;
+  confirmedClock(confirmed).then((clock) => {
+    if (!slot.isConnected) return;
+    slot.textContent = `Confirmed in block ${confirmed.toLocaleString("en-US")}, ${clock}`;
+  }).catch(() => {});
 }
 
 madeEl.addEventListener("click", (event) => {
