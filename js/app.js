@@ -57,11 +57,18 @@ function storedBlock(seal) {
   return { id: seal.hash, height: seal.height, timestamp, tx_count: txCount };
 }
 
+function glyphImage(block) {
+  const svg = glyphSvg(block).replace(/\s+/g, " ").trim();
+  const src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  const file = `${Number(block.height)}.seal.svg`;
+  return `<img class="glyph" src="${src}" alt="${file}" width="160" height="160">`;
+}
+
 function sealCard(seal, block) {
   const inscription = `https://ordinals.com/inscription/${encodeURIComponent(seal.id)}`;
   return `
     <article class="seal" data-height="${block.height}" tabindex="0">
-      ${glyphSvg(block)}
+      ${glyphImage(block)}
       <div>
         <span>${block.height}.seal</span>
         <small>${ringLabel(block.height)} · ${Number(block.tx_count).toLocaleString("en-US")} tx</small>
@@ -237,7 +244,7 @@ function sheetHtml(item) {
   const hash = linkLine(`https://mempool.space/block/${encodeURIComponent(block.id)}`, block.id);
   return `
     <div class="seal-dialog-top">
-      ${glyphSvg(block)}
+      ${glyphImage(block)}
       <div>
         <h3 id="seal-dialog-title">${Number(block.height).toLocaleString("en-US")}.seal</h3>
         <p class="facts">${ringLabel(block.height)} · ${Number(block.tx_count).toLocaleString("en-US")} tx</p>
@@ -627,7 +634,7 @@ function showBlock(block) {
   const waiting = seal ? "" : pendingHtml(rows);
   stageEl.innerHTML = `
     <div class="stage">
-      ${glyphSvg(block)}
+      ${glyphImage(block)}
       <div>
         <p class="only-name">${block.height}.seal</p>
         <p class="facts">${ringLabel(block.height)} · ${Number(block.tx_count).toLocaleString("en-US")} tx</p>
@@ -723,7 +730,7 @@ function paintChain(blocks, pending) {
   }).join("");
   const mined = blocks.slice(0, 6).map((block, index) => `
     <button type="button" class="block${arrived && index === 0 ? " arriving" : ""}" data-height="${block.height}">
-      ${glyphSvg(block)}
+      ${glyphImage(block)}
       <b>${Number(block.height).toLocaleString("en-US")}</b>
       <small>${formatSats(block.extras?.totalFees)}</small>
       <small>${formatRate(block.extras?.medianFee)} sat/vB · ${ago(block.timestamp)}</small>

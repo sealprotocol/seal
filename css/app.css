@@ -169,7 +169,7 @@ main > section { min-width: 0; }
   font-weight: 400;
 }
 
-.block svg, button.block svg { display: block; width: 100%; height: auto; }
+.block svg, button.block svg, .block .glyph, button.block .glyph { display: block; width: 100%; height: auto; }
 .block b, .block small, button.block b, button.block small {
   display: block;
   font-family: var(--mono);
@@ -253,7 +253,7 @@ button.chip.on {
 
 .seal:focus-visible { outline: 1px solid var(--orange); outline-offset: 2px; }
 
-.seal svg { display: block; width: 100%; height: auto; }
+.seal svg, .seal .glyph { display: block; width: 100%; height: auto; }
 .seal span, .seal small, .seal a {
   display: block;
   font-family: var(--mono);
@@ -275,7 +275,7 @@ button.chip.on {
   align-items: center;
 }
 
-.gallery.list .seal svg { width: 88px; }
+.gallery.list .seal svg, .gallery.list .seal .glyph { width: 88px; }
 .gallery.list .seal span { margin-top: 0; }
 
 .pages {
@@ -352,7 +352,7 @@ button:hover { filter: brightness(1.05); }
   margin-top: 16px;
 }
 
-.stage svg { width: 240px; height: auto; display: block; }
+.stage svg, .stage .glyph { width: 240px; height: auto; display: block; }
 
 .only-name {
   margin: 0;
@@ -420,7 +420,7 @@ button:hover { filter: brightness(1.05); }
   align-items: center;
 }
 
-.seal-dialog-top svg { width: 100%; height: auto; display: block; }
+.seal-dialog-top svg, .seal-dialog-top .glyph { width: 100%; height: auto; display: block; }
 
 .seal-dialog h3 {
   margin: 0;
@@ -516,12 +516,12 @@ button:hover { filter: brightness(1.05); }
   .status { align-items: flex-start; margin-top: 16px; }
   .logo pre { font-size: 12px; }
   .look-row, .stage { grid-template-columns: 1fr; }
-  .stage svg { width: min(240px, 100%); }
+  .stage svg, .stage .glyph { width: min(240px, 100%); }
   .only-name { font-size: 32px; }
   .view-switch { margin-left: 0; }
   .find-row { max-width: none; }
   .gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .seal-dialog-top { grid-template-columns: 1fr; }
-  .seal-dialog-top svg { width: min(220px, 100%); }
+  .seal-dialog-top svg, .seal-dialog-top .glyph { width: min(220px, 100%); }
   .seal-dialog h3 { font-size: 28px; }
 }
