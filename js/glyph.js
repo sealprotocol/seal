@@ -75,7 +75,7 @@ export function glyphSvg(block) {
   }).join("");
 
   return `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="Seal of the block">
+    <svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048" viewBox="0 0 160 160" role="img" aria-label="Seal of the block">
       <rect width="160" height="160" fill="#171b22"/>
       <circle cx="80" cy="80" r="72" fill="none" stroke="#3a2a16" stroke-width="2"/>
       ${innerRings}

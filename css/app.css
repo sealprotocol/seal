@@ -169,14 +169,22 @@ main > section { min-width: 0; }
   font-weight: 400;
 }
 
-.block svg, button.block svg, .block .glyph, button.block .glyph { display: block; width: 100%; height: auto; }
+.block svg, button.block svg, .block .glyph, button.block .glyph {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  -webkit-user-drag: none;
+}
 .block b, .block small, button.block b, button.block small {
   display: block;
   font-family: var(--mono);
 }
 .block b, button.block b { margin-top: 8px; font-size: 14px; }
 .block small, button.block small { margin-top: 4px; color: var(--muted); font-size: 12px; }
-button.block:hover { border-color: var(--orange); }
+.block[data-height] { cursor: pointer; }
+button.block:hover, .block[data-height]:hover { border-color: var(--orange); }
 
 .fee-stack {
   display: flex;
@@ -253,7 +261,7 @@ button.chip.on {
 
 .seal:focus-visible { outline: 1px solid var(--orange); outline-offset: 2px; }
 
-.seal svg, .seal .glyph { display: block; width: 100%; height: auto; }
+.seal svg, .seal .glyph { display: block; width: 100%; max-width: 100%; height: auto; aspect-ratio: 1; }
 .seal span, .seal small, .seal a {
   display: block;
   font-family: var(--mono);
@@ -512,6 +520,13 @@ button:hover { filter: brightness(1.05); }
 }
 
 @media (max-width: 700px) {
+  .chain {
+    width: 100%;
+    max-width: 100%;
+    margin-left: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
   .top { display: block; padding-top: 20px; }
   .status { align-items: flex-start; margin-top: 16px; }
   .logo pre { font-size: 12px; }

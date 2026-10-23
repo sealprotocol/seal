@@ -1,4 +1,4 @@
-import { figureBits, glyphSvg } from "./glyph.js?v=9";
+import { figureBits, glyphSvg } from "./glyph.js?v=10";
 
 const madeEl = document.querySelector("#made");
 const findForm = document.querySelector("#find-form");
@@ -59,9 +59,9 @@ function storedBlock(seal) {
 
 function glyphImage(block) {
   const svg = glyphSvg(block).replace(/\s+/g, " ").trim();
-  const src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  const src = `data:image/svg+xml,${encodeURIComponent(svg)}`;
   const file = `${Number(block.height)}.seal.svg`;
-  return `<img class="glyph" src="${src}" alt="${file}" width="160" height="160">`;
+  return `<img class="glyph" src="${src}" alt="${file}" width="160" height="160" draggable="false">`;
 }
 
 function sealCard(seal, block) {
@@ -729,12 +729,12 @@ function paintChain(blocks, pending) {
     `;
   }).join("");
   const mined = blocks.slice(0, 6).map((block, index) => `
-    <button type="button" class="block${arrived && index === 0 ? " arriving" : ""}" data-height="${block.height}">
+    <article class="block${arrived && index === 0 ? " arriving" : ""}" data-height="${block.height}" tabindex="0">
       ${glyphImage(block)}
       <b>${Number(block.height).toLocaleString("en-US")}</b>
       <small>${formatSats(block.extras?.totalFees)}</small>
       <small>${formatRate(block.extras?.medianFee)} sat/vB · ${ago(block.timestamp)}</small>
-    </button>
+    </article>
   `).join("");
   chainEl.innerHTML = `
     <div class="lane waiting">${waiting}</div>
@@ -747,6 +747,10 @@ function paintChain(blocks, pending) {
       gateCentered = true;
     });
   }
+  chainEl.querySelectorAll("img.glyph").forEach((img) => {
+    if (img.complete) return;
+    img.addEventListener("load", centerGate, { once: true });
+  });
 }
 
 function centerGate() {
@@ -765,10 +769,19 @@ chainEl.addEventListener("click", (event) => {
   const button = event.target.closest(".block");
   if (!button) return;
   const height = button.dataset.height;
+  if (!height) return;
   heightInput.value = height;
   const block = latestBlocks.find((item) => String(item.height) === height);
   if (block) paintShown(block);
   document.querySelector("#look-title").scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+chainEl.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  const button = event.target.closest(".block");
+  if (!button?.dataset.height) return;
+  event.preventDefault();
+  button.click();
 });
 
 let latestBlocks = [];
