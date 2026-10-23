@@ -1,4 +1,4 @@
-import { figureBits, glyphSvg } from "./glyph.js?v=8";
+import { figureBits, glyphSvg } from "./glyph.js?v=9";
 
 const madeEl = document.querySelector("#made");
 const findForm = document.querySelector("#find-form");
