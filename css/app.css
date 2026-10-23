@@ -519,6 +519,10 @@ button:hover { filter: brightness(1.05); }
   line-height: 1.45;
 }
 
+@media (pointer: coarse) {
+  .glyph { -webkit-touch-callout: none; user-select: none; }
+}
+
 @media (max-width: 700px) {
   .chain {
     width: 100%;

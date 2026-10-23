@@ -864,3 +864,90 @@ setInterval(() => {
 setInterval(reloadFees, 20000);
 setInterval(reloadSeals, 30000);
 window.addEventListener("resize", centerGate);
+
+function phoneSavesPng() {
+  return window.matchMedia("(pointer: coarse)").matches;
+}
+
+function sealPng(img) {
+  const size = 2048;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  canvas.getContext("2d").drawImage(img, 0, 0, size, size);
+  const url = canvas.toDataURL("image/png");
+  const binary = atob(url.slice(url.indexOf(",") + 1));
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  const name = (img.alt || "seal.svg").replace(/\.svg$/i, ".png");
+  return new File([bytes], name, { type: "image/png" });
+}
+
+function downloadSealPng(file) {
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(file);
+  link.download = file.name;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(link.href), 2000);
+}
+
+let sealPngOffered = 0;
+
+function offerSealPng(img) {
+  const now = Date.now();
+  if (now - sealPngOffered < 800) return true;
+  let file;
+  try {
+    file = sealPng(img);
+  } catch {
+    return false;
+  }
+  sealPngOffered = now;
+  if (navigator.canShare?.({ files: [file] })) {
+    navigator.share({ files: [file] }).catch((error) => {
+      if (error?.name === "AbortError") return;
+      downloadSealPng(file);
+    });
+  } else {
+    downloadSealPng(file);
+  }
+  const swallow = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+  document.addEventListener("click", swallow, { capture: true, once: true });
+  setTimeout(() => document.removeEventListener("click", swallow, { capture: true }), 700);
+  return true;
+}
+
+document.addEventListener("contextmenu", (event) => {
+  const img = event.target.closest?.("img.glyph");
+  if (!img || !phoneSavesPng()) return;
+  if (!offerSealPng(img)) return;
+  event.preventDefault();
+});
+
+let sealPress = null;
+
+document.addEventListener("touchstart", (event) => {
+  const img = event.target.closest?.("img.glyph");
+  if (!img || !phoneSavesPng() || event.touches.length !== 1) return;
+  const point = event.touches[0];
+  sealPress = { img, x: point.clientX, y: point.clientY, at: Date.now() };
+}, { passive: true });
+
+document.addEventListener("touchmove", (event) => {
+  if (!sealPress || event.touches.length !== 1) return;
+  const point = event.touches[0];
+  if (Math.hypot(point.clientX - sealPress.x, point.clientY - sealPress.y) > 12) sealPress = null;
+}, { passive: true });
+
+document.addEventListener("touchend", (event) => {
+  const held = sealPress;
+  sealPress = null;
+  if (!held || Date.now() - held.at < 500) return;
+  event.preventDefault();
+  offerSealPng(held.img);
+}, { passive: false });
