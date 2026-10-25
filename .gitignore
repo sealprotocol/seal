@@ -10,3 +10,5 @@ watch.log
 pending.json
 __pycache__/
 .cursor/
+
+integrators/melt/

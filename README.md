@@ -39,7 +39,7 @@ The exact measures and colors are in [specification.md](specification.md). The s
 
 Someone inscribes the text of a block height that already exists. The first confirmed inscription of that exact text is the seal of that height. A later copy of the same text is not a seal.
 
-The inscription stays text. A wallet or an explorer that follows the rule keeps the earliest inscription and draws the picture from the block named by the text. The same arrangement is used by Bitmap: the file is text, and the picture is computed.
+The inscription stays text. A wallet or an explorer that follows the rule keeps the earliest inscription and draws the picture from the block named by the text. The same arrangement is used by Bitmap: the file is text, and the picture is computed. A wallet, a scan, an explorer, or a marketplace follows the steps in [integrators/README.md](integrators/README.md).
 
 A seal is a collectible. The first inscription has one holder.
 
