@@ -607,22 +607,340 @@ async function loadPending() {
     const response = await fetch("/pending.json", { cache: "no-store" });
     if (response.status === 404) {
       pending = [];
+      pendingSeen = true;
       return;
     }
     if (!response.ok) return;
     const data = await response.json();
-    if (Array.isArray(data)) pending = data;
+    if (Array.isArray(data)) {
+      pending = data;
+      pendingSeen = true;
+    }
   } catch {
     // Keep the last list. A missed fetch is not an empty mempool.
   }
 }
+
+function inscribeHref(height) {
+  const text = `${Number(height)}.seal`;
+  return `https://unisat.io/inscribe?tab=text&content=${encodeURIComponent(text)}`;
+}
+
+const FREE_CAP = 10;
+const freeFrom = document.querySelector("#free-from");
+const freeCircles = document.querySelector("#free-circles");
+const freeNote = document.querySelector("#free-note");
+const freeList = document.querySelector("#free-list");
+const freePrev = document.querySelector("#free-prev");
+const freeNext = document.querySelector("#free-next");
+const freeInscribe = document.querySelector("#free-inscribe");
+const freeSelected = new Set();
+const freeBlocks = new Map();
+const freeMiss = new Set();
+const recentlyTaken = new Map();
+let sealsSeen = false;
+let pendingSeen = false;
+let freePage = 1;
+let freeEra = "all";
+let freeStart = null;
+let freeRowsKey = "";
+let freeDraw = 0;
+let freeBusy = false;
+
+function freePageSize() {
+  return window.matchMedia("(max-width: 700px)").matches ? 24 : 25;
+}
+
+function inscribeManyHref(heights) {
+  const ordered = [...heights].sort((a, b) => a - b);
+  if (ordered.length < 2) return inscribeHref(ordered[0]);
+  const content = ordered.map((height) => `${height}.seal`).join("\\n");
+  const web = `https://unisat.io/inscribe/ordinals?tab=text&textMode=bulk&content=${encodeURIComponent(content)}`;
+  const ua = navigator.userAgent || "";
+  if (/Android/i.test(ua)) {
+    return `intent://${web.slice("https://".length)}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(web)};end`;
+  }
+  if (/iPhone|iPad|iPod/i.test(ua)) return `x-safari-https://${web.slice("https://".length)}`;
+  return web;
+}
+
+function takenHeights() {
+  const taken = new Set();
+  for (const item of made) taken.add(Number(item.height));
+  for (const item of pending) {
+    if (/^[0-9a-f]{64}$/i.test(item.txid || "")) taken.add(Number(item.height));
+  }
+  const now = Date.now();
+  for (const height of taken) recentlyTaken.set(height, now);
+  for (const [height, at] of recentlyTaken) {
+    if (now - at > 120000) recentlyTaken.delete(height);
+    else taken.add(height);
+  }
+  return taken;
+}
+
+function freeRange() {
+  const tip = Number(seenTip) || 0;
+  let high = tip;
+  let low = 0;
+  if (freeEra !== "all") {
+    const circles = Number(freeEra);
+    if (circles <= 1) low = 4 * 210000;
+    else {
+      const eraIndex = 5 - circles;
+      low = eraIndex * 210000;
+      high = Math.min(high, low + 210000 - 1);
+    }
+  }
+  if (freeStart !== null) high = Math.min(high, freeStart);
+  return { high, low };
+}
+
+function freeSlice() {
+  const { high, low } = freeRange();
+  const taken = takenHeights();
+  const size = freePageSize();
+  const skip = (freePage - 1) * size;
+  const rows = [];
+  let passed = 0;
+  let more = false;
+  if (high < low) return { rows, more };
+  for (let height = high; height >= low; height -= 1) {
+    if (taken.has(height)) continue;
+    if (passed < skip) {
+      passed += 1;
+      continue;
+    }
+    if (rows.length === size) {
+      more = true;
+      break;
+    }
+    rows.push(height);
+  }
+  return { rows, more };
+}
+
+function storeFreeBlock(block) {
+  if (!block || !/^[0-9a-f]{64}$/i.test(block.id || "")) return false;
+  const height = Number(block.height);
+  const timestamp = Number(block.timestamp);
+  const txCount = Number(block.tx_count);
+  if (!Number.isFinite(height) || !Number.isFinite(timestamp) || !Number.isFinite(txCount)) return false;
+  freeBlocks.set(height, { id: block.id, height, timestamp, tx_count: txCount });
+  return true;
+}
+
+function knownFreeBlock(height) {
+  const cached = freeBlocks.get(height);
+  if (cached) return cached;
+  const recent = latestBlocks.find((block) => Number(block.height) === height);
+  if (!recent || !storeFreeBlock(recent)) return null;
+  return freeBlocks.get(height);
+}
+
+function freePicture(height) {
+  const block = knownFreeBlock(height);
+  const image = block ? glyphImage(block) : "";
+  return `<span class="free-picture" data-free-picture="${height}">${image}</span>`;
+}
+
+function paintFreeSlots(rows) {
+  for (const height of rows) {
+    const block = knownFreeBlock(height);
+    const slot = freeList.querySelector(`[data-free-picture="${height}"]`);
+    if (slot && block && !slot.querySelector("img")) slot.innerHTML = glyphImage(block);
+  }
+}
+
+async function drawFreePictures(rows, draw) {
+  const missing = () => rows.filter((height) => !knownFreeBlock(height) && !freeMiss.has(height));
+  if (!missing().length) return;
+  freeBusy = true;
+  try {
+    for (let guard = 0; guard < 4 && missing().length && draw === freeDraw; guard += 1) {
+      const height = Math.max(...missing());
+      try {
+        const response = await fetch(`https://mempool.space/api/v1/blocks/${height}`, { signal: AbortSignal.timeout(20000) });
+        if (!response.ok) throw new Error("blocks");
+        const blocks = await response.json();
+        if (Array.isArray(blocks)) for (const block of blocks) storeFreeBlock(block);
+      } catch {
+        try {
+          storeFreeBlock(await blockByHeight(height));
+        } catch {
+          freeMiss.add(height);
+        }
+      }
+      if (!knownFreeBlock(height)) freeMiss.add(height);
+      if (draw !== freeDraw) return;
+      paintFreeSlots(rows);
+    }
+  } finally {
+    if (draw === freeDraw) freeBusy = false;
+  }
+}
+
+function renderFree() {
+  const taken = takenHeights();
+  for (const height of freeSelected) {
+    if (taken.has(height)) freeSelected.delete(height);
+  }
+  const tip = Number(seenTip) || 0;
+  if (!tip && seenTip !== 0) {
+    freeNote.textContent = "The blocks are unreachable.";
+    freeList.innerHTML = "";
+    freeRowsKey = "";
+    freeInscribe.hidden = true;
+    return;
+  }
+  if (!tip) {
+    freeNote.textContent = "Reading the blocks…";
+    freeList.innerHTML = "";
+    freeRowsKey = "";
+    freeInscribe.hidden = true;
+    return;
+  }
+  if (!sealsSeen || !pendingSeen) {
+    freeNote.textContent = "Reading the seals…";
+    freeList.innerHTML = "";
+    freeRowsKey = "";
+    freeInscribe.hidden = true;
+    return;
+  }
+  const { rows, more } = freeSlice();
+  if (!rows.length && freePage > 1) {
+    freePage = 1;
+    renderFree();
+    return;
+  }
+  const count = freeSelected.size;
+  const chosen = count ? `${count} of ${FREE_CAP} selected.` : "";
+  freeNote.textContent = rows.length ? chosen : chosen ? `${chosen} No free height in this range.` : "No free height in this range.";
+  const rowKey = rows.join(",");
+  if (rowKey !== freeRowsKey) {
+    freeRowsKey = rowKey;
+    freeDraw += 1;
+    freeList.innerHTML = rows.map((height) => {
+      const checked = freeSelected.has(height);
+      const disabled = !checked && count >= FREE_CAP;
+      return `
+        <label class="free-row">
+          <input type="checkbox" data-free="${height}"${checked ? " checked" : ""}${disabled ? " disabled" : ""}>
+          ${freePicture(height)}
+          <span class="free-name">${Number(height).toLocaleString("en-US")}.seal</span>
+        </label>
+      `;
+    }).join("");
+    drawFreePictures(rows, freeDraw);
+  } else {
+    for (const input of freeList.querySelectorAll("input[data-free]")) {
+      const height = Number(input.dataset.free);
+      const checked = freeSelected.has(height);
+      input.checked = checked;
+      input.disabled = !checked && count >= FREE_CAP;
+    }
+    if (!freeBusy && rows.some((height) => !knownFreeBlock(height))) {
+      freeDraw += 1;
+      drawFreePictures(rows, freeDraw);
+    }
+  }
+  freePrev.disabled = freePage <= 1;
+  freeNext.disabled = !more;
+  if (!count) {
+    freeInscribe.hidden = true;
+    freeInscribe.removeAttribute("href");
+    return;
+  }
+  const ordered = [...freeSelected].sort((a, b) => a - b);
+  freeInscribe.hidden = false;
+  const href = inscribeManyHref(ordered);
+  freeInscribe.href = href;
+  if (href.startsWith("http")) {
+    freeInscribe.target = "_blank";
+    freeInscribe.rel = "noopener noreferrer";
+  } else {
+    freeInscribe.target = "_self";
+    freeInscribe.removeAttribute("rel");
+  }
+  freeInscribe.textContent = count === 1 ? "Inscribe" : `Inscribe ${count}`;
+}
+
+window.matchMedia("(max-width: 700px)").addEventListener("change", () => {
+  freePage = 1;
+  renderFree();
+});
+
+let freeStartTimer = 0;
+
+function applyFreeStart() {
+  const typed = freeFrom.value.trim();
+  const next = !typed ? null : /^(0|[1-9][0-9]*)$/.test(typed) ? Number(typed) : freeStart;
+  if (next === freeStart) return;
+  freeStart = next;
+  freePage = 1;
+  renderFree();
+}
+
+freeFrom?.addEventListener("input", () => {
+  clearTimeout(freeStartTimer);
+  freeStartTimer = setTimeout(applyFreeStart, 350);
+});
+
+document.querySelector("#free-form")?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  clearTimeout(freeStartTimer);
+  applyFreeStart();
+});
+
+freeCircles?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-free-era]");
+  if (!button || button.dataset.freeEra === freeEra) return;
+  freeEra = button.dataset.freeEra;
+  freePage = 1;
+  for (const item of freeCircles.querySelectorAll("[data-free-era]")) {
+    const on = item === button;
+    item.classList.toggle("on", on);
+    item.setAttribute("aria-pressed", on ? "true" : "false");
+  }
+  renderFree();
+});
+
+freePrev?.addEventListener("click", () => {
+  if (freePage <= 1) return;
+  freePage -= 1;
+  renderFree();
+});
+
+freeNext?.addEventListener("click", () => {
+  freePage += 1;
+  renderFree();
+});
+
+freeList?.addEventListener("change", (event) => {
+  const input = event.target;
+  if (!(input instanceof HTMLInputElement) || !input.matches("input[data-free]")) return;
+  const height = Number(input.dataset.free);
+  if (input.checked) {
+    if (freeSelected.size >= FREE_CAP) {
+      input.checked = false;
+      return;
+    }
+    freeSelected.add(height);
+  } else {
+    freeSelected.delete(height);
+  }
+  renderFree();
+});
 
 function showBlock(block) {
   shownBlock = block;
   const seal = lookupSeal(block.height);
   const rows = seal ? [] : pendingFor(block.height);
   const key = `${block.id}|${seal?.id || ""}|${rows.map((item) => `${item.txid}:${item.fee ?? ""}:${item.rate ?? ""}`).join(",")}`;
-  if (key === shownKey) return;
+  if (key === shownKey) {
+    renderFree();
+    return;
+  }
   shownKey = key;
   const name = `${Number(block.height).toLocaleString("en-US")}.seal`;
   const owner = seal?.address
@@ -632,6 +950,10 @@ function showBlock(block) {
     ? `<a class="seal-id" href="https://ordinals.com/inscription/${encodeURIComponent(seal.id)}" title="${escapeText(seal.id)}">${escapeText(shortId(seal.id))}</a>`
     : "";
   const waiting = seal ? "" : pendingHtml(rows);
+  const open = !seal && !rows.length;
+  const inscribe = open
+    ? `<a class="inscribe" href="${inscribeHref(block.height)}" target="_blank" rel="noopener noreferrer">Inscribe</a>`
+    : "";
   stageEl.innerHTML = `
     <div class="stage">
       ${glyphImage(block)}
@@ -639,6 +961,7 @@ function showBlock(block) {
         <p class="only-name">${block.height}.seal</p>
         <p class="facts">${ringLabel(block.height)} · ${Number(block.tx_count).toLocaleString("en-US")} tx</p>
         ${seal ? `<p class="facts">Inscribed.</p>` : rows.length ? "" : `<p class="facts">Not inscribed.</p>`}
+        ${inscribe}
         ${owner}
         ${inscription}
         ${waiting}
@@ -650,6 +973,7 @@ function showBlock(block) {
   else if (rows.some(hasFee)) resultEl.textContent = `${name} is in the mempool.`;
   else if (rows.length) resultEl.textContent = `${name} is sent.`;
   else resultEl.textContent = `${name} is not inscribed.`;
+  renderFree();
 }
 
 async function paintShown(block) {
@@ -803,6 +1127,7 @@ async function paintTip() {
     const tip = latestBlocks[0]?.height;
     liveEl.textContent = tip ? `latest block ${Number(tip).toLocaleString("en-US")}` : "blocks unreachable";
     paintChain(latestBlocks, Array.isArray(pending) ? pending : []);
+    renderFree();
   } catch {
     if (!latestBlocks.length) liveEl.textContent = "blocks unreachable";
   } finally {
@@ -817,6 +1142,7 @@ async function reloadSeals() {
     const response = await fetch("/seals.json", { cache: "no-store" });
     if (!response.ok) throw new Error("list");
     const text = await response.text();
+    sealsSeen = true;
     if (text === sealFile) return;
     sealFile = text;
     await paintMade(JSON.parse(text));
@@ -854,15 +1180,21 @@ async function reloadFees() {
   }
 }
 
+async function refreshFree() {
+  await Promise.all([loadPending(), reloadSeals()]);
+  renderFree();
+}
+
 reloadSeals();
+loadPending();
 paintTip();
 reloadFees();
 setInterval(paintTip, 20000);
 setInterval(() => {
   if (shownBlock) paintShown(shownBlock);
 }, 20000);
+setInterval(refreshFree, 5000);
 setInterval(reloadFees, 20000);
-setInterval(reloadSeals, 30000);
 window.addEventListener("resize", centerGate);
 
 function phoneSavesPng() {

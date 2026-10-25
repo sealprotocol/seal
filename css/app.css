@@ -352,6 +352,70 @@ button {
 
 button:hover { filter: brightness(1.05); }
 
+a.inscribe {
+  display: inline-block;
+  margin-top: 10px;
+  background: var(--orange);
+  color: #1a1206;
+  padding: 10px 14px;
+  font-weight: 650;
+  text-decoration: none;
+}
+a.inscribe:hover { filter: brightness(1.05); }
+
+.free-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+}
+
+.free-list {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.free-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 10px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 14px;
+}
+
+.free-picture {
+  width: 56px;
+  height: 56px;
+  flex: none;
+  background: #171b22;
+}
+
+.free-picture .glyph {
+  width: 56px;
+  height: 56px;
+  display: block;
+}
+
+.free-name { min-width: 0; }
+
+.free-row input { margin: 0; }
+
+.free-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.free-actions .inscribe { margin-top: 0; }
+
 .stage {
   display: grid;
   grid-template-columns: 240px 1fr;
@@ -519,6 +583,14 @@ button:hover { filter: brightness(1.05); }
   line-height: 1.45;
 }
 
+@media (max-width: 1060px) {
+  .free-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+@media (max-width: 860px) {
+  .free-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
 @media (pointer: coarse) {
   .glyph { -webkit-touch-callout: none; user-select: none; }
 }
@@ -540,6 +612,19 @@ button:hover { filter: brightness(1.05); }
   .view-switch { margin-left: 0; }
   .find-row { max-width: none; }
   .gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .free-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .free-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 8px;
+    row-gap: 4px;
+    align-items: center;
+    padding: 8px;
+  }
+  .free-row input { grid-column: 1; grid-row: 1 / span 2; }
+  .free-picture { grid-column: 2; grid-row: 1; width: 48px; height: 48px; }
+  .free-picture .glyph { width: 48px; height: 48px; }
+  .free-name { grid-column: 2; grid-row: 2; font-size: 12px; line-height: 1.2; }
   .seal-dialog-top { grid-template-columns: 1fr; }
   .seal-dialog-top svg, .seal-dialog-top .glyph { width: min(220px, 100%); }
   .seal-dialog h3 { font-size: 28px; }

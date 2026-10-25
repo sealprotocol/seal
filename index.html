@@ -23,7 +23,7 @@
   <meta name="twitter:title" content=".seal">
   <meta name="twitter:description" content="Only the first inscription is the seal.">
   <meta name="twitter:image" content="https://sealprotocol.art/og.png">
-  <link rel="stylesheet" href="/css/app.css?v=26">
+  <link rel="stylesheet" href="/css/app.css?v=28">
 </head>
 <body>
   <header class="top">
@@ -87,6 +87,34 @@
       <nav class="pages" id="pages-after" aria-label="Inscribed pages" hidden></nav>
     </section>
 
+    <section aria-labelledby="inscribe-title">
+      <div class="section-head">
+        <h2 id="inscribe-title">Inscribe</h2>
+        <p>Free heights, newest first. Select up to 10. Each line is one inscription.</p>
+      </div>
+      <div class="free-tools">
+        <form id="free-form" class="find-row" role="search">
+          <label class="sr" for="free-from">From height</label>
+          <input id="free-from" name="from" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="from height">
+        </form>
+        <div class="filters" id="free-circles" role="group" aria-label="Circles">
+          <button type="button" class="chip on" data-free-era="all" aria-pressed="true">All</button>
+          <button type="button" class="chip" data-free-era="5" aria-pressed="false">5 circles</button>
+          <button type="button" class="chip" data-free-era="4" aria-pressed="false">4 circles</button>
+          <button type="button" class="chip" data-free-era="3" aria-pressed="false">3 circles</button>
+          <button type="button" class="chip" data-free-era="2" aria-pressed="false">2 circles</button>
+          <button type="button" class="chip" data-free-era="1" aria-pressed="false">1 circle</button>
+        </div>
+      </div>
+      <p class="result" id="free-note" role="status"></p>
+      <div id="free-list" class="free-list"></div>
+      <div class="free-actions">
+        <button type="button" id="free-prev" class="chip">Prev</button>
+        <button type="button" id="free-next" class="chip">Next</button>
+        <a id="free-inscribe" class="inscribe" hidden target="_blank" rel="noopener noreferrer">Inscribe</a>
+      </div>
+    </section>
+
     <section aria-labelledby="look-title">
       <div class="section-head">
         <h2 id="look-title">Picture of a block</h2>
@@ -133,6 +161,6 @@
     <div id="seal-dialog-body"></div>
   </dialog>
 
-  <script type="module" src="/js/app.js?v=33"></script>
+  <script type="module" src="/js/app.js?v=35"></script>
 </body>
 </html>
